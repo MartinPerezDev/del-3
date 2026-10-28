@@ -1,0 +1,264 @@
+tags:
+  - name: Orders
+    description: Gestión de pedidos
+  - name: Mocks
+    description: Datos ficticios para desarrollo
+
+paths:
+  /api/orders:
+    get:
+      tags: [Orders]
+      summary: Listar pedidos
+      description: Devuelve los pedidos registrados
+      responses:
+        "200":
+          description: Lista de pedidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdersResponse"
+    post:
+      tags: [Orders]
+      summary: Crear un pedido
+      description: Requiere cliente y comercio existentes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Pedido creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: Datos invalidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Faltan datos obligatorios
+                code: VALIDATION_ERROR
+        "404":
+          description: Cliente o tienda no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/orders/{oid}:
+    parameters:
+        - in: path
+          name: oid
+          required: true
+          description: ID del pedido
+          schema:
+            type: string
+    get:
+      tags: [Orders]
+      summary: Obtener un pedido
+      description:  Devuelve el pedido del ID indicado
+      responses:
+        "200":
+          description: Pedido obtenido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: ID invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Pedido no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/mocks/mockingUsers:
+    get:
+      tags: [Mocks]
+      summary: Generar usuarios sin guardarlos
+      parameters:
+        - in: query
+          name: qty
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Usuarios generados en memoria
+        "400":
+          description: Cantidad invalida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    OrderItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Auriculares
+        quantity:
+          type: number
+          example: 2
+        price:
+          type: number
+          example: 1500
+      required: [name, quantity, price]
+
+    Customer:
+      type: object
+      properties:
+        _id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+
+    Store:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        owner:
+          type: string
+
+    OrderRead:
+      type: object
+      properties:
+        _id:
+          type: string
+        customer:
+          $ref: "#/components/schemas/Customer"
+        store:
+          $ref: "#/components/schemas/Store"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        deliveryAddress:
+          type: string
+        total:
+          type: number
+          example: 3000
+        status:
+          type: string
+          example: created
+        priority:
+          type: string
+          example: normal
+
+    OrdersResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Lista de pedidos
+        payload:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderRead"
+      required: [status, message, payload]
+
+    OrderInput:
+      type: object
+      properties:
+        customer:
+          type: string
+          description: ID de un usuario con rol customer
+          example: 6a46646de068d46fc6bbda5z
+        store:
+          type: string
+          description: ID de un comercio existente
+          example: 6a46646de068d46fc6bbda6a
+        deliveryAddress:
+          type: string
+          example: Calle falsa 123
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        priority:
+          type: string
+          enum: [low, normal, high]
+          default: normal
+      required: [customer, store, items, deliveryAddress]
+
+    Order:
+      type: object
+      properties:
+        _id:
+          type: string
+        customer:
+          type: string
+        store:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        deliveryAddress:
+          type: string
+        total:
+          type: number
+          example: 3000
+        status:
+          type: string
+          example: created
+        priority:
+          type: string
+          example: normal
+
+    OrderResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Pedido creado
+        payload:
+          $ref: "#/components/schemas/Order"
+      required: [status, message, payload]
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Pedido no encontrado
+        code:
+          type: string
+          example: ORDER_NOT_FOUND
+      required: [status, message, code]
